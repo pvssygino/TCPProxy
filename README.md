@@ -1,12 +1,11 @@
 # TCPProxy
-Proxy Tcp che fa da intermediario tra un client e un server remoto.
-
+Proxy Tcp che fa da intermediario tra un client e un server remoto.\
 Per l'utilizzo recarsi tramite CMD nella cartella dove il file .exe è presente ed avviarlo cosi:
 
 <sub>tcpproxy.exe local_port remote_host remote_port</sub>
 
-#firewall
-Nella stessa cartella dell'eseguibile è necessario, se non presente, creare un file chiamato firewall.rules dove inserire le regole del firewall. 
+## firewall
+Nella stessa cartella dell'eseguibile è necessario, se non presente, creare un file chiamato ***firewall.rules*** dove inserire le regole del firewall. 
 E' possibile inserirei le regole seguendo questo esempio:
 
 0.0.0.0/0,0.0.0.0/0,0 #Consente tutte le connessioni\
