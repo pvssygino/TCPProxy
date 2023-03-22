@@ -24,9 +24,10 @@ typedef struct {
 
 // Array di regole del firewall
 
-int init_firewall();
+int init_firewall(); 
 void shutdown_firewall();
 int is_allowed(SOCKET client_socket, const char* remote_host, int remote_port);
+char* get_client_ip(SOCKET client_socket);
 DWORD get_subnet_mask(DWORD interface_index);
 
 #endif /* FIREWALL_H */
