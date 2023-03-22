@@ -57,8 +57,11 @@ int connect_to_server(char* hostname, int port) {
 void handle_client(int client_sockfd, int server_sockfd) {
     char buffer[BUFFER_SIZE];
     int bytes_read;
+    int buffer_size = 0;
 
     while ((bytes_read = recv(client_sockfd, buffer, BUFFER_SIZE, 0)) > 0) {
+        // AGGIUNGERE CONTROLLO HEADER E TAIL DEI PACCHETTI
+        //printf("[DATA_SIZE]: %d [FROM]: %s [TO]: %s", buffer);
         if (send(server_sockfd, buffer, bytes_read, 0) < 0) {
             error((char*)"Error sending data to server");
         }
