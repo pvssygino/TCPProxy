@@ -1,8 +1,20 @@
+
 #include "firewall.h"
 
 // Ottiene l'indirizzo IP della rete locale
 firewall_rule* rules;
 int num_rules = 0;
+
+char* get_client_ip(SOCKET client_socket) {
+    char* ip;
+    struct sockaddr_in client_addr;
+    int addr_len = sizeof(client_addr);
+    getpeername(client_socket, (struct sockaddr*)&client_addr, &addr_len);
+    ip = (char*)malloc(addr_len * sizeof(char));
+    strcpy(ip, inet_ntoa(client_addr.sin_addr));
+    
+    return ip;
+}
 
 DWORD get_local_ip() {
     DWORD local_ip = 0;
@@ -60,7 +72,7 @@ DWORD get_subnet_mask(DWORD interface_index) {
     return subnet_mask;
 }
 
-// Verifica se l'indirizzo IP è nella stessa subnet dell'indirizzo IP locale
+// Verifica se l'indirizzo IP Ã¨ nella stessa subnet dell'indirizzo IP locale
 int is_same_subnet(DWORD ip_addr) {
     DWORD local_ip = get_local_ip();
     DWORD subnet_mask = 0;
@@ -80,7 +92,7 @@ int read_firewall_rules() {
 
     fp = fopen(RULES_FILE, "r");
     if (fp == NULL) {
-        printf("[ERRORE]: impossibile trovare il file: %s\n", RULES_FILE);
+        printf("[ERRORE]: impossibile trovare il file: %s\n",RULES_FILE);
         return -1;
     }
 
@@ -96,7 +108,9 @@ int read_firewall_rules() {
             fclose(fp);
             return -1;
         }
+        //printf("REGOLA %d  =  {", num_rules);
         strncpy(local_subnet, token, sizeof(local_subnet));
+        printf("%s\n", local_subnet);
 
         token = strtok(NULL, ",");
         if (token == NULL) {
@@ -105,6 +119,7 @@ int read_firewall_rules() {
             return -1;
         }
         strncpy(remote_subnet, token, sizeof(remote_subnet));
+        //printf("%s\n", remote_subnet);
 
         token = strtok(NULL, ",");
         if (token == NULL) {
@@ -113,7 +128,7 @@ int read_firewall_rules() {
             return -1;
         }
         remote_port = atoi(token);
-
+        //printf(" %d}\n", remote_port);
         if (num_rules == 0) {
             rules = (firewall_rule*)malloc(sizeof(firewall_rule));
         }
@@ -125,8 +140,9 @@ int read_firewall_rules() {
         strncpy(rules[num_rules].remote_subnet, remote_subnet, sizeof(rules[num_rules].remote_subnet));
         rules[num_rules].remote_port = remote_port;
         num_rules++;
+        
     }
-
+    printf("\n");
     fclose(fp);
     return 0;
 }
@@ -146,28 +162,33 @@ void shutdown_firewall() {
     }
 }
 
-// Verifica se il socket del client è consentito a connettersi all'host remoto sulla porta remota
+// Verifica se il socket del client Ã¨ consentito a connettersi all'host remoto sulla porta remota
 int is_allowed(SOCKET client_socket, const char* remote_host, int remote_port) {
+   
     struct sockaddr_in client_addr;
     int addr_len = sizeof(client_addr);
-
+    if (num_rules == 0) return 1;
     getpeername(client_socket, (struct sockaddr*)&client_addr, &addr_len);
+    
     if (!is_same_subnet(client_addr.sin_addr.S_un.S_addr)) {
         return 0;
-    }
-
-    struct hostent* host = gethostbyname(remote_host);
-    if (host == NULL) {
-        return 0;
+       
     }
 
     for (int i = 0; i < num_rules; i++) {
-        if (strcmp(inet_ntoa(*(struct in_addr*)host->h_addr_list[0]), rules[i].remote_subnet) == 0
-            && remote_port == rules[i].remote_port) {
-            return 1;
+        if (strcmp(inet_ntoa(client_addr.sin_addr), rules[i].local_subnet) == 0) {
+            return 0;
         }
     }
-
+    
+    for (int i = 0; i < num_rules; i++) {
+        if (strcmp(remote_host, rules[i].remote_subnet) == 0
+            && remote_port == rules[i].remote_port) {
+            return 1;
+            
+        }
+    } 
+    
     return 0;
 }
 
