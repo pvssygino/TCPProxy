@@ -1,5 +1,5 @@
 # TCPProxy
-Proxy Tcp che fa da intermediario tra un client e un server remoto.\
+Proxy Tcp che fa da intermedio tra un client e un server remoto.\
 Per l'utilizzo recarsi tramite CMD nella cartella dove il file .exe è presente ed avviarlo cosi:
 
 <sub>tcpproxy.exe local_port remote_host remote_port</sub>
