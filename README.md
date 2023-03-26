@@ -2,6 +2,15 @@
 Proxy Tcp che fa da intermedio tra un client e un server remoto.\
 Per l'utilizzo modificare i parametri contenuti in config.ini.
 
+                                                  [PROXY]
+                                                   IP=
+                                                   PORT=
+                                                   ..
+                                                   [SERVER]
+                                                   REMOTE_HOST=
+                                                   REMOTE_PORT=
+                                                   ..
+
 ## firewall
 Nella stessa cartella dell'eseguibile è necessario, se non presente, creare un file chiamato ***firewall.rules*** dove inserire le regole del firewall. 
 E' possibile bannare uno o più ip inserendoli nel file come in esempio:
