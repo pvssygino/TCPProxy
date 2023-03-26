@@ -1,26 +1,26 @@
 #include "log.h"
+#include <iostream>
+#include <chrono>
+#include <ctime>
 #pragma warning(disable:4996)
-void logToFile(LogType type, char* message) {
-    time_t t = time(NULL);
 
-    LogMessage logMessage;
-    logMessage.timestamp = t;
-    logMessage.type = type;
-    snprintf(logMessage.message, sizeof(logMessage.message), "%s", message);
-
-    struct tm tm = *localtime(&t);
-
-    char filename[100];
+Logger::Logger(const std::string& filename) {
     
-        snprintf(filename, sizeof(filename), "%d-%02d-%02d.log", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-    
-
-    FILE* file = fopen(filename, "a");
-    if (file == NULL) {
-        printf("Errore durante l'apertura del file di log.");
-        return;
+    m_outfile.open(filename, std::ios::app);
+    if (!m_outfile.is_open()) {
+        std::cerr << "Failed to open log file" << std::endl;
     }
+}
 
-    fprintf(file, "[%d-%02d-%02d %02d:%02d:%02d] [%s] %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, (type == INFO) ? "INFO" : "ERROR", logMessage.message);
-    fclose(file);
+Logger::~Logger() {
+    if (m_outfile.is_open()) {
+        m_outfile.close();
+    }
+}
+
+void Logger::log(const std::string& message) {
+    if (m_outfile.is_open()) {
+        auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        m_outfile <<"["<< std::ctime(&now) <<"]:" << message << std::endl;
+    }
 }
