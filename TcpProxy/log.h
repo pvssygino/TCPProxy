@@ -1,23 +1,12 @@
-#ifndef LOG_H
-#define LOG_H
+#pragma once
+#include <fstream>
+#include <string>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#define LOG_MESSAGE_MAX_SIZE 50
-
-typedef enum {
-    INFO,
-    ERR
-} LogType;
-
-typedef struct {
-    time_t timestamp;
-    LogType type;
-    char message[LOG_MESSAGE_MAX_SIZE];
-} LogMessage;
-
-void logToFile(LogType type, char* message);
-
-#endif
+class Logger {
+public:
+    Logger(const std::string& filename);
+    ~Logger();
+    void log(const std::string& message);
+private:
+    std::ofstream m_outfile;
+};
