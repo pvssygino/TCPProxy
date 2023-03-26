@@ -1,8 +1,7 @@
 #pragma once
 #include <string>
 #include <winsock.h>
-#define IP_REMOTE_SERVER "79.110.84.175"
-#define PORT_REMOTE_SERVER 4008
+
 class remote_server {
 public:
 	remote_server(std::string ip, int port);
