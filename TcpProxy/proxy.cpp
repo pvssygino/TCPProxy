@@ -1,80 +1,127 @@
-
 #include "proxy.h"
-#pragma warning(disable:4996)
-void error(char* msg) {
-    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
-    exit(1);
+#include "firewall.h"
+#include "log.h"
+
+#pragma comment(lib,"ws2_32.lib")
+
+firewall* FIREWALL = new firewall("firewall.rules");
+Logger log_("TCPPROXY_LOG.log");
+int record_client = 0;
+
+Proxy::Proxy(std::string ip,int port,std::string remote_host,int remote_port) {
+	
+	this->remote_host = new remote_server(remote_host, remote_port);
+
+	if (WSAStartup(MAKEWORD(2, 2), &this->wsa) != 0) {
+		std::cout << "Errore nella librearia winsock!" << std::endl;
+	}
+	this->n_client = NULL;
+	this->ip = ip;
+	this->port = port;
+	this->proxy_address.sin_family = AF_INET;
+	this->proxy_address.sin_addr.s_addr = inet_addr(this->ip.c_str());
+	this->proxy_address.sin_port = htons(this->port);
+	
+	this->listener = socket(AF_INET, SOCK_STREAM, 0);
+	
+	bind_();
+	
+	if (listen(this->listener, 5) < 0) {
+		std::cout << "Impossibile ascoltare il socket dell'ascoltatore!" << std::endl;
+	}
 }
-
-int create_socket() {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        error((char*)"Error creating socket");
-    }
-    return sockfd;
+int Proxy::bind_() {
+	
+	if (bind(this->listener, (struct sockaddr*)&this->proxy_address, sizeof(this->proxy_address)) < 0) {
+		std::cout << "Errore bind" << std::endl;
+		return -1;
+	}
+	return this->listener;
 }
+void Proxy::packet_handle() {
 
-int bind_socket(int sockfd, int port) {
-    struct sockaddr_in server_address;
-    memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_address.sin_port = htons(port);
+	char buffer[PACKET_BUFFER_MAX_SIZE];
+	int bytes_read = 0;
+	int buffer_size = 0;
 
-    if (bind(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-        error((char*)"Error binding socket");
-    }
+	int sockfd_server = remote_host->connect_to_remotehost();
+	while ((bytes_read = recv(this->client_[this->n_client].sock_fd, buffer, PACKET_BUFFER_MAX_SIZE, 0)) > 0) {
 
-    if (listen(sockfd, 5) < 0) {
-        error((char*)"Error listening on socket");
-    }
+		if (send(sockfd_server, buffer, bytes_read, 0) < 0) {
+			std::cout << "Impossibile inviare dati al server!" << std::endl;
+			break;
+		}
+		memset(buffer, 0, PACKET_BUFFER_MAX_SIZE);
 
-    return sockfd;
+		bytes_read = recv(sockfd_server, buffer, PACKET_BUFFER_MAX_SIZE, 0);
+		if (bytes_read < 0) {
+			std::cout << "Impossibile ricevere dati dal server!" << std::endl;
+			break;
+		}
+
+		if (send(this->client_[this->n_client].sock_fd, buffer, bytes_read, 0) < 0) {
+			std::cout << "Impossibile inviare dati al client:"<<this-n_client << std::endl;
+			break;
+		}
+		memset(buffer, 0, PACKET_BUFFER_MAX_SIZE);
+	}
+
+	std::cout<<"[OUT] [ "<<this->client_[this->n_client].get_client_ip()<<" ]\n";
+	log_.log("CONNESSIONE IN USCITA: " + this->client_[n_client].get_client_ip());
+	closesocket(this->client_[this->n_client].sock_fd);
+	this->client_[this->n_client].set_state(OFF);
+	this->n_client--;		
 }
+int Proxy::accept_connection() {
 
-int connect_to_server(char* hostname, int port) {
+	int client_len = sizeof(this->client_[this->n_client].client_struct);
+	this->client_[this->n_client].sock_fd = accept(this->listener, (struct sockaddr*)&this->client_[this->n_client].client_struct, &client_len);
 
-    struct sockaddr_in server_address;
-    memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);
+	this->client_[n_client].set_ip(inet_ntoa(this->client_[this->n_client].client_struct.sin_addr));
 
-    struct hostent* server = gethostbyname(hostname);
-    if (server == NULL) {
-        error((char*)"Error resolving hostname");
-    }
+	if (FIREWALL->check_connection(this->client_[n_client].get_client_ip()) == TRUE) {
 
-    memcpy(&server_address.sin_addr.s_addr, server->h_addr, server->h_length);
+		if (this->client_[this->n_client].sock_fd < 0) {
+			std::cout << "Errore nell'accettazione della connessione dal client" << std::endl;
+			return -1;
+		}
+		else if (this->n_client == MAX_CONNECTION) {
+			std::cout << "Il Proxy ha raggiunto il numero massimo di connessioni!" << std::endl;
+			log_.log("NUMERO MASSIMO DI CLIENT RAGGIUNTO!");
+			return -1;
+			if (this->client_[this->n_client].sock_fd >= 0) {
+				std::cout << "Connessione in entrata riufiutata!" << std::endl;
+				log_.log("CONNESSIONE RIFIUTATA : " + this->client_[n_client].get_client_ip());
+				return -1;
+			}
+		}
+		else {
+			std::cout << "[IN] : [" << this->n_client << "]" << "[ " << this->client_[n_client].get_client_ip() << " ]" << std::endl;
+			this->client_[this->n_client].set_state(ON);
+			log_.log("CONNESSIONE STABILITA CON: " + this->client_[n_client].get_client_ip());
 
-    int sockfd = create_socket();
-    if (connect(sockfd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-        error((char*)"Error connecting to server");
-    }
-
-    return sockfd;
+			t = std::thread([this]() {
+				this->packet_handle();
+				});
+			t.join();
+			this->n_client++;
+			
+		}
+	}
+	else {
+		std::cout << "[FIREWALL] ip_block: " << this->client_[n_client].get_client_ip() << std::endl;
+		log_.log("FIREWALL [ip_block]: " + this->client_[n_client].get_client_ip());
+		closesocket(this->client_[n_client].sock_fd);
+		return -1;
+	}
+	record_client++;
+	return this->client_[this->n_client].sock_fd;
 }
-
-void handle_client(int client_sockfd, int server_sockfd) {
-    char buffer[BUFFER_SIZE];
-    int bytes_read;
-    int buffer_size = 0;
-
-    while ((bytes_read = recv(client_sockfd, buffer, BUFFER_SIZE, 0)) > 0) {
-        // AGGIUNGERE CONTROLLO HEADER E TAIL DEI PACCHETTI
-        //printf("[DATA_SIZE]: %d [FROM]: %s [TO]: %s", buffer);
-        if (send(server_sockfd, buffer, bytes_read, 0) < 0) {
-            error((char*)"Error sending data to server");
-        }
-        memset(buffer, 0, BUFFER_SIZE);
-
-        bytes_read = recv(server_sockfd, buffer, BUFFER_SIZE, 0);
-        if (bytes_read < 0) {
-            error((char*)"Error receiving data from server");
-        }
-
-        if (send(client_sockfd, buffer, bytes_read, 0) < 0) {
-            error((char*)"Error sending data to client");
-        }
-        memset(buffer, 0, BUFFER_SIZE);
-    }
+bool Proxy::try_server_connection() {
+	bool status = this->remote_host->get_server_status();
+	return status;
+}
+Proxy::~Proxy() {
+	free(remote_host);
+	delete[] this->client_;
 }
