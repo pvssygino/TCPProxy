@@ -7,9 +7,9 @@ Nella stessa cartella dell'eseguibile è necessario, se non presente, creare un 
 E' possibile bannare uno o più ip inserendoli nel file come in esempio:
 
                    
-                                                                 79.110.84.175
-                                                                 120.40.180.32
-                                                                 ecc..
+                                                  79.110.84.175
+                                                  120.40.180.32
+                                                          ecc..
        
 
 ## log
