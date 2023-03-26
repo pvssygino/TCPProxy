@@ -1,14 +1,15 @@
 # TCPProxy
 Proxy Tcp che fa da intermedio tra un client e un server remoto.\
-Per l'utilizzo recarsi tramite CMD nella cartella dove il file .exe è presente ed avviarlo cosi:
+Per l'utilizzo modificare i parametri contenuti in config.ini.
 
-<sub>tcpproxy.exe local_port remote_host remote_port</sub>
 ## firewall
 Nella stessa cartella dell'eseguibile è necessario, se non presente, creare un file chiamato ***firewall.rules*** dove inserire le regole del firewall. 
-E' possibile inserire le regole seguendo questo esempio:
+E' possibile bannare uno o più ip inserendoli nel file come in esempio:
 
                    
-        80.110.43.20,79.130.80.76,80      # 80.110.43.20 rappresenta l'indirizzo da bloccare, mentre 79.130.80.76:80 rappresentano l'indirizzo ip e la porta del server remoto                                           # E' possibile aggiungere più regole al firewall specificandole una per linea
+                                                                 79.110.84.175
+                                                                 120.40.180.32
+                                                                 ecc..
        
 
 ## log
