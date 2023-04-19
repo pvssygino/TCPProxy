@@ -26,4 +26,4 @@ E' possibile bannare uno o più ip inserendoli nel file come in esempio:
 ## log
 Quando il proxy viene eseguito, si genera automaticamente un file .log avente per nome la data e l'ora corrente, qui dentro verranno salvati gli interventi del firewall e le comunicazioni avvenute durante il periodo di attività del proxy.
 ## note
-Il source di questo file sorgente può essere compilato soltanto su ambiente Windows, in quanto viene utilizzata la libreria winsock, che su Linux viene sostituita da un'altra E' possibile compilare sia un versione x32 che x64.
+Il source di questo file sorgente può essere compilato soltanto su ambiente Windows, in quanto viene utilizzata la libreria winsock, che su Linux non è presente. E' possibile compilare sia un versione x32 che x64. TcpProxy essendo un intermediario può essere utilizzato per dirottare il traffico di un GameServer, cosi da tutelare il gioco da attacchi Dos. Inoltre, è possibile eseguire un'analisi di pacchetto prima che questo venga inoltrato al Client per verificarne il contenuto.
